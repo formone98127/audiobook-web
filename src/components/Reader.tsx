@@ -28,35 +28,27 @@ export function Reader({ chapter }: ReaderProps) {
 
   // Initialize audio player
   useEffect(() => {
-    console.log('Initializing audio with URL:', chapter.audioUrl);
-    const player = new AudioPlayer(chapter.audioUrl, chapter.timings);
+    console.log('Initializing TTS audio player');
+    const player = new AudioPlayer('', chapter.timings);
+    player.setSentences(chapter.paragraphs);
     playerRef.current = player;
 
     // Set initial speed
     player.setPlaybackRate(state.speed);
 
-    // Check if audio loads
-    const audio = player.audioElement;
-
-    const handleCanPlay = () => {
-      console.log('Audio is ready to play');
+    // Check if TTS is available
+    if (player.isReady()) {
+      console.log('TTS is ready');
       setAudioReady(true);
-    };
-
-    const handleError = (e: Event) => {
-      console.error('Audio failed to load:', e);
-      setAudioError('Failed to load audio. Please check if the audio file is accessible.');
-    };
-
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('error', handleError);
+    } else {
+      console.error('TTS not available');
+      setAudioError('Text-to-speech is not supported in your browser. Please try Chrome or Edge.');
+    }
 
     return () => {
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('error', handleError);
       player.dispose();
     };
-  }, [chapter.audioUrl, chapter.timings, state.speed]);
+  }, [chapter.paragraphs, chapter.timings, state.speed]);
 
   // Handle scroll start (user begins scrolling)
   const handleScrollStart = useCallback(() => {
