@@ -10,3 +10,24 @@
   margin: 0 auto;
   padding: 40px 20px;
 }
+
+.error-message {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+.loading-message {
+  background-color: #dbeafe;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: #1e40af;
+  font-size: 14px;
+  text-align: center;
+}

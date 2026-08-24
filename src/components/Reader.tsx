@@ -1,4 +1,4 @@
-import { useReducer, useRef, useEffect, useCallback } from 'react';
+import { useReducer, useRef, useEffect, useCallback, useState } from 'react';
 import { Sentence } from './Sentence';
 import { Controls } from './Controls';
 import { useScrollSpy } from '../hooks/useScrollSpy';
@@ -20,22 +20,43 @@ export function Reader({ chapter }: ReaderProps) {
     totalSentences: chapter.paragraphs.length,
   });
 
+  const [audioReady, setAudioReady] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const playerRef = useRef<AudioPlayer | null>(null);
   const sentenceRefs = useRef<(HTMLDivElement | null)[]>([]);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize audio player
   useEffect(() => {
+    console.log('Initializing audio with URL:', chapter.audioUrl);
     const player = new AudioPlayer(chapter.audioUrl, chapter.timings);
     playerRef.current = player;
 
     // Set initial speed
     player.setPlaybackRate(state.speed);
 
+    // Check if audio loads
+    const audio = player.audioElement;
+
+    const handleCanPlay = () => {
+      console.log('Audio is ready to play');
+      setAudioReady(true);
+    };
+
+    const handleError = (e: Event) => {
+      console.error('Audio failed to load:', e);
+      setAudioError('Failed to load audio. Please check if the audio file is accessible.');
+    };
+
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('error', handleError);
+
     return () => {
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('error', handleError);
       player.dispose();
     };
-  }, [chapter.audioUrl, chapter.timings]);
+  }, [chapter.audioUrl, chapter.timings, state.speed]);
 
   // Handle scroll start (user begins scrolling)
   const handleScrollStart = useCallback(() => {
@@ -71,7 +92,7 @@ export function Reader({ chapter }: ReaderProps) {
   // Audio sync (unidirectional: audio → UI)
   useAudioSync({
     player: playerRef.current,
-    enabled: !state.isUserScrolling, // Disable during user scroll
+    enabled: !state.isUserScrolling && audioReady, // Disable during user scroll or if not ready
     onSentenceChange: (sentenceIndex, audioTime) => {
       dispatch({ type: 'AUDIO_TIME_UPDATE', sentenceIndex, audioTime });
 
@@ -85,20 +106,29 @@ export function Reader({ chapter }: ReaderProps) {
 
   // Play/Pause handler
   const handlePlayPause = useCallback(async () => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || !audioReady) {
+      console.error('Cannot play: audio not ready');
+      return;
+    }
 
     if (state.status === 'playing') {
       playerRef.current.pause();
       dispatch({ type: 'PAUSE' });
     } else {
-      await playerRef.current.play();
-      dispatch({ type: 'PLAY' });
+      try {
+        await playerRef.current.play();
+        dispatch({ type: 'PLAY' });
+      } catch (error) {
+        console.error('Failed to play:', error);
+        setAudioError('Failed to play audio. Click the play button again.');
+      }
     }
-  }, [state.status]);
+  }, [state.status, audioReady]);
 
   // Speed change handler
   const handleSpeedChange = useCallback((speed: number) => {
     dispatch({ type: 'SET_SPEED', speed });
+    playerRef.current?.setPlaybackRate(speed);
   }, []);
 
   // Click on sentence to seek
@@ -113,6 +143,16 @@ export function Reader({ chapter }: ReaderProps) {
   return (
     <div className="reader" onScroll={handleScrollStart}>
       <div className="sentences">
+        {audioError && (
+          <div className="error-message">
+            {audioError}
+          </div>
+        )}
+        {!audioReady && !audioError && (
+          <div className="loading-message">
+            Loading audio...
+          </div>
+        )}
         {chapter.paragraphs.map((text, i) => (
           <Sentence
             key={i}

@@ -6,7 +6,21 @@ export class AudioPlayer {
 
   constructor(audioUrl: string, timingIndex: TimingIndex | null = null) {
     this.audio = new Audio(audioUrl);
+    this.audio.crossOrigin = 'anonymous'; // Handle CORS for external audio
     this.timingIndex = timingIndex;
+
+    // Add error handling
+    this.audio.addEventListener('error', (e) => {
+      console.error('Audio error:', e, this.audio.error);
+    });
+
+    this.audio.addEventListener('canplay', () => {
+      console.log('Audio can play:', audioUrl);
+    });
+
+    this.audio.addEventListener('loadstart', () => {
+      console.log('Audio loading:', audioUrl);
+    });
   }
 
   get audioElement(): HTMLAudioElement {
@@ -30,7 +44,14 @@ export class AudioPlayer {
   }
 
   async play(): Promise<void> {
-    return this.audio.play();
+    console.log('Attempting to play audio...');
+    try {
+      await this.audio.play();
+      console.log('Audio playing successfully');
+    } catch (error) {
+      console.error('Failed to play audio:', error);
+      throw error;
+    }
   }
 
   pause(): void {
@@ -44,7 +65,8 @@ export class AudioPlayer {
   /** Get current sentence index from audio time */
   getCurrentSentence(): number {
     if (!this.timingIndex) return 0;
-    return this.timingIndex.sentenceAt(this.audio.currentTime);
+    const sentence = this.timingIndex.sentenceAt(this.audio.currentTime);
+    return sentence >= 0 ? sentence : 0;
   }
 
   /** Get start time for a given sentence index */
@@ -72,5 +94,10 @@ export class AudioPlayer {
   dispose(): void {
     this.audio.pause();
     this.audio.src = '';
+  }
+
+  /** Check if audio is ready to play */
+  isReady(): boolean {
+    return this.audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA;
   }
 }
