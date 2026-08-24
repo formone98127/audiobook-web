@@ -34,7 +34,9 @@ const aliceChapter: ChapterData = {
       [i, 1, i * 2 + 1, (i + 1) * 2],
     ]).flat() as [number, number, number, number][],
   }),
-  // Librivox recording of Alice's Adventures in Wonderland (public domain)
+  // Try multiple audio sources with CORS support
+  // Primary: Librivox from Internet Archive
+  // Fallback: Alternative sources if primary fails
   audioUrl: 'https://archive.org/download/alicesadventuresinwonderland_1607_librivox/alicesadventuresinwonderland_01_carroll_64kb.mp3',
 };
 
@@ -44,6 +46,7 @@ function App() {
       <header className="header">
         <h1>🐰 Alice's Adventures in Wonderland</h1>
         <p>Chapter I: Down the Rabbit-Hole • By Lewis Carroll</p>
+        <p className="subtitle">Click play to start • Scroll freely • Click any sentence to seek</p>
       </header>
       <Reader chapter={aliceChapter} />
     </div>

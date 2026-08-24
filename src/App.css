@@ -33,3 +33,9 @@ body {
   color: #6b7280;
   font-size: 14px;
 }
+
+.subtitle {
+  color: #9ca3af;
+  font-size: 12px;
+  font-style: italic;
+}
