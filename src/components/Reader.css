@@ -1,0 +1,12 @@
+.reader {
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 120px; /* Space for controls */
+}
+
+.sentences {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
